@@ -10,6 +10,9 @@ GREEN = "\033[92m"
 BOLD = '\033[1m'
 RESET = "\033[0m"
 
+# some comment
+
+
 def message_notice(notice, color = None):
     color = color or GREEN
     return f"{color} {notice} {RESET}"
