@@ -1,21 +1,28 @@
 import address_book_lib as abl
 import messages_settings as message
 import classes.exceptions as ex
-from messages_settings import MESSAGES, EXIT_COMMANDS, WARNING_MESSAGES, COMMAND_HANDLER_DESCRIPTION
+from messages_settings import (
+    MESSAGES,
+    EXIT_COMMANDS,
+    WARNING_MESSAGES,
+    COMMAND_HANDLER_DESCRIPTION,
+)
 import helpers.general_helpers as helpeer
+from prompt_toolkit import prompt
+from prompt_toolkit.completion import WordCompleter
 
 contacts_book = abl.AddressBook()
 
 RED = "\033[91m"
 GREEN = "\033[92m"
-BOLD = '\033[1m'
+BOLD = "\033[1m"
 RESET = "\033[0m"
 
 
-def message_notice(notice, color = None):
+def message_notice(notice, color=None):
     color = color or GREEN
     return f"{color} {notice} {RESET}"
-    
+
 
 def message_warging(warning):
     return f"{RED} {warning} {RESET}"
@@ -35,6 +42,7 @@ def input_error(func):
             return message_warging(f"Error: {WARNING_MESSAGES['not_correct_data']}")
         except ex.NotCorrectPhone as err:
             return message_warging(f"Error: {WARNING_MESSAGES['not_correct_phone']}")
+
     return wrapper
 
 
@@ -55,7 +63,7 @@ def error(err):
 def add(com):
     count = len(com)
     if count < 3:
-        raise ValueError(WARNING_MESSAGES["name_phone"])  
+        raise ValueError(WARNING_MESSAGES["name_phone"])
 
     record_is = contacts_book.find(com[1])
     if record_is == None:
@@ -70,14 +78,14 @@ def add(com):
     else:
         record_is.add_phone(com[2])
         contacts_book.add_record(record_is)
-        return message_notice(MESSAGES[com[0]+"_more"])
+        return message_notice(MESSAGES[com[0] + "_more"])
 
 
 def contacts_book_fullness():
     if len(contacts_book) == 0:
         return message_warging(WARNING_MESSAGES["contacts_book_empty"])
     else:
-        return 1  
+        return 1
 
 
 def presence_name(com):
@@ -94,22 +102,24 @@ def show_all(com, search=None):
         message = "show_found"
     else:
         cont = contacts_book_fullness()
-        if cont != 1: return cont
-        
+        if cont != 1:
+            return cont
+
         iter_Item = contacts_book
         message = com
 
-    contacts = ''
+    contacts = ""
     contacts += message_notice(MESSAGES[message])
     for val in iter_Item.values():
-        contacts += '\n' + message_notice(f"{val}", BOLD)
+        contacts += "\n" + message_notice(f"{val}", BOLD)
     return contacts
 
 
 @input_error
 def phone(com):
     cont = contacts_book_fullness()
-    if cont != 1: return cont
+    if cont != 1:
+        return cont
 
     if len(com) < 2:
         raise ValueError(WARNING_MESSAGES["name"])
@@ -136,12 +146,12 @@ def iter(com):
         items = contacts_book.iterator(int(com[1]), int(com[2]))
     else:
         items = contacts_book.iterator()
-        
+
     if items != None:
-        contacts = ''
-        contacts += message_notice(MESSAGES[com[0]])            
+        contacts = ""
+        contacts += message_notice(MESSAGES[com[0]])
         for item in items:
-            contacts += '\n' + message_notice(f"{item}", BOLD)
+            contacts += "\n" + message_notice(f"{item}", BOLD)
         return contacts
     else:
         return message_warging(WARNING_MESSAGES["iter_no_result"])
@@ -156,7 +166,7 @@ def delete(com):
         contacts_book.delete(com[1])
         return message_warging(MESSAGES["delete"])
 
-    
+
 @input_error
 def search(com):
     res = contacts_book.search(com[1])
@@ -183,11 +193,13 @@ def birthdays(com, days=7):
     for item in contacts_book.values():
         if item.date.value != None:
             days_count = helpeer.list_days_to_birthday(item.date.value)
-            if days_count <= search_days:        
-                res += message_notice(f"{item.name.value.title()} after {days_count} day(s)\n", BOLD)
-                
+            if days_count <= search_days:
+                res += message_notice(
+                    f"{item.name.value.title()} after {days_count} day(s)\n", BOLD
+                )
+
     if res != "":
-        return message_notice(MESSAGES["list_days_to_birthday"]+"\n", GREEN) + res
+        return message_notice(MESSAGES["list_days_to_birthday"] + "\n", GREEN) + res
     else:
         return message_warging(WARNING_MESSAGES["no_list_days_to_birthday"])
 
@@ -198,7 +210,9 @@ def help(com):
     for command in COMMAND_HANDLER.keys():
         # res += f"Command: {command}- description: {COMMAND_HANDLER_DESCRIPTION[command]}\n"
         res += message_notice(f"Command: {command}", GREEN)
-        res += message_notice(f"- description: {COMMAND_HANDLER_DESCRIPTION[command]}\n", BOLD)
+        res += message_notice(
+            f"- description: {COMMAND_HANDLER_DESCRIPTION[command]}\n", BOLD
+        )
     return res
 
 
@@ -213,8 +227,11 @@ COMMAND_HANDLER = {
     "delete": delete,
     "daysbir": daysbir,
     "birthdays": birthdays,
-    "help": help
+    "help": help,
 }
+
+# Completer for commands
+command_completer = WordCompleter(COMMAND_HANDLER.keys(), ignore_case=True)
 
 
 def command_handler(com):
@@ -232,7 +249,8 @@ def parsing(user_input):
 def main():
     contacts_book.unserialization()
     while True:
-        user_input = input("Input command >>> ")
+        user_input = prompt(">>>", completer=command_completer) # input via command completer
+        # user_input = input("Input command >>> ")
         user_input = user_input.strip().lower()
         if user_input in EXIT_COMMANDS:
             print(exit(MESSAGES[user_input]))
