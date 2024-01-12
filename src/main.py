@@ -2,6 +2,7 @@ import address_book_lib as abl
 import messages_settings as message
 import classes.exceptions as ex
 from messages_settings import MESSAGES, EXIT_COMMANDS, WARNING_MESSAGES, COMMAND_HANDLER_DESCRIPTION
+import helpers.general_helpers as helpeer
 
 contacts_book = abl.AddressBook()
 
@@ -9,8 +10,6 @@ RED = "\033[91m"
 GREEN = "\033[92m"
 BOLD = '\033[1m'
 RESET = "\033[0m"
-
-# some comment
 
 
 def message_notice(notice, color = None):
@@ -176,6 +175,23 @@ def daysbir(com):
         res = contact.days_to_birthday()
         return message_notice(f"{res}", BOLD)
 
+
+@input_error
+def birthdays(com, days=7):
+    search_days = int(com[1]) if len(com) > 1 else days
+    res = ""
+    for item in contacts_book.values():
+        if item.date.value != None:
+            days_count = helpeer.list_days_to_birthday(item.date.value)
+            if days_count <= search_days:        
+                res += message_notice(f"{item.name.value.title()} after {days_count} day(s)\n", BOLD)
+                
+    if res != "":
+        return message_notice(MESSAGES["list_days_to_birthday"]+"\n", GREEN) + res
+    else:
+        return message_warging(WARNING_MESSAGES["no_list_days_to_birthday"])
+
+
 @input_error
 def help(com):
     res = ""
@@ -195,7 +211,8 @@ COMMAND_HANDLER = {
     "iter": iter,
     "search": search,
     "delete": delete,
-    "daysbir": daysbir,  # Count days to bithday
+    "daysbir": daysbir,
+    "birthdays": birthdays,
     "help": help
 }
 
